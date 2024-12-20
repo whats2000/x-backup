@@ -12,6 +12,7 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.util.cio.readChannel
 import io.ktor.util.toByteArray
 import kotlinx.coroutines.CancellationException
@@ -23,6 +24,8 @@ import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.future.asDeferred
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -41,9 +44,12 @@ import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createParentDirectories
 import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 import kotlin.io.path.name
 import kotlin.io.path.outputStream
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 import kotlin.io.use
 import kotlin.let
 import kotlin.ranges.step
@@ -56,12 +62,35 @@ private const val STEP = 10 * 1024 * 1024L
 
 class OnedriveSupport(
     private val config: Config,
-    private val httpClient: HttpClient
-): CloudStorageProvider {
+    private val httpClient: HttpClient,
+) : CloudStorageProvider {
     private val log = LoggerFactory.getLogger("X Backup/OnrDrive")!!
     override var bytesReceivedLastSecond = 0L
     override var bytesSentLastSecond = 0L
     private var uploadTask: Deferred<Result<Unit>>? = null
+
+    @Serializable
+    data class TempFileData(
+        val backupId: Int,
+        var compressedSize: Long,
+        val uploadSession: JsonObject?,
+        val uploadedParts: MutableList<Int>,
+        val finished: Boolean,
+    )
+
+    fun getTempFileData(): TempFileData? {
+        val file = Path(".tmp", "xb.upload.json")
+        if (!file.exists()) return null
+        return runCatching {
+            Json.decodeFromString<TempFileData>(file.readText())
+        }.getOrNull()
+    }
+
+    fun saveTempFileData(data: TempFileData) {
+        val file = Path(".tmp", "xb.upload.json")
+        file.createParentDirectories()
+        file.writeText(Json.encodeToString(data))
+    }
 
     @OptIn(DelicateCoroutinesApi::class)
     override suspend fun uploadBackup(service: XBackupKotlinAsyncApi, id: Int) {
@@ -74,26 +103,38 @@ class OnedriveSupport(
                 val backup = requireNotNull(service.getBackup(id)) { "Backup not found" }
                 service.activeTask = "Uploading to OneDrive"
                 val file = Path(".tmp", "xb.upload.zip").createParentDirectories()
+                val tempData = getTempFileData()?.takeIf { it.backupId == id }
+                    ?: TempFileData(id, 0, null, mutableListOf(), false)
                 service as BackupDatabaseService
-                ZipOutputStream(file.outputStream()).use { stream ->
-                    service.zipArchive(stream, service.getBackup(id)!!)
+                saveTempFileData(tempData)
+                if (tempData.compressedSize == 0L) {
+                    ZipOutputStream(file.outputStream()).use { stream ->
+                        service.zipArchive(stream, backup)
+                    }
                 }
                 val fileSize = file.fileSize()
                 log.info("Zip file size: ${fileSize / 1024 / 1024}MB")
+                tempData.compressedSize = fileSize
+                saveTempFileData(tempData)
                 // get item-id
-                val uploadSession = retry(5) {
-                    httpClient.post("https://redenmc.com/api/backup/v1/onedrive/upload") {
+                val uploadSession = tempData.uploadSession ?: retry(5) {
+                    val response = httpClient.post("https://redenmc.com/api/backup/v1/onedrive/upload") {
                         header("Authorization", "Bearer ${config.cloudBackupToken}")
                         contentType(ContentType.Application.Json)
                         setBody("backup")
-                    }.body<JsonObject>()
+                    }
+                    require(response.status.isSuccess()) {
+                        "Failed to get upload session: ${response.status}"
+                    }
+                    log.info("Received upload session from reden api")
+                    response.body<JsonObject>()
                 }
-                log.info("Received upload session from server")
                 val javaNetClient = java.net.http.HttpClient.newBuilder()
                     .executor(Dispatchers.IO.asExecutor())
                     .build()
                 var uploadJo: JsonObject? = null
-                (0 until fileSize step STEP).map { start ->
+                val startSlice = tempData.uploadedParts.maxOrNull() ?: 0
+                (startSlice until fileSize step STEP).map { start ->
                     retry(10) {
                         val endInclusive = kotlin.comparisons.minOf(start + STEP, fileSize) - 1
                         val uploadUrl = uploadSession["uploadUrl"]!!.jsonPrimitive.content
@@ -116,6 +157,8 @@ class OnedriveSupport(
                         val timeEnd = System.currentTimeMillis()
                         bytesSentLastSecond = (part.size * 1000 / (timeEnd - timeStart))
                         service.activeTaskProgress += (100 * part.size / fileSize).toInt()
+                        tempData.uploadedParts.add((start / STEP).toInt())
+                        saveTempFileData(tempData)
                     }
                 }
                 uploadJo?.let { jojo ->
@@ -139,6 +182,7 @@ class OnedriveSupport(
                     }
                 }
                 Path(".tmp", "xb.upload.zip").deleteIfExists()
+                Path(".tmp", "xb.upload.json").deleteIfExists()
                 uploadTask = null
             }
         }
