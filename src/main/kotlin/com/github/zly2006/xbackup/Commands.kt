@@ -329,10 +329,10 @@ object Commands {
                                 val id = result.backId
                                 if (XBackup.config.cloudBackupToken != null) {
                                     XBackup.service.launch(Dispatchers.Default) {
-                                        it.source.send(Utils.translate("command.xb.uploading_backup", backupIdText(id)))
+                                        it.source.server.broadcast(Utils.translate("command.xb.uploading_backup", backupIdText(id)))
                                         XBackup.isBusy = false
                                         XBackup.service.cloudStorageProvider.uploadBackup(XBackup.service, id)
-                                        it.source.send(Utils.translate("command.xb.backup_uploaded", backupIdText(id)))
+                                        it.source.server.broadcast(Utils.translate("command.xb.backup_uploaded", backupIdText(id)))
                                     }
                                 }
                             }

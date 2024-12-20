@@ -94,7 +94,7 @@ class OnedriveSupport(
                     .build()
                 var uploadJo: JsonObject? = null
                 (0 until fileSize step STEP).map { start ->
-                    retry(3) {
+                    retry(10) {
                         val endInclusive = kotlin.comparisons.minOf(start + STEP, fileSize) - 1
                         val uploadUrl = uploadSession["uploadUrl"]!!.jsonPrimitive.content
                         val part = file.readChannel(start, endInclusive).toByteArray()

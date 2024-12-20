@@ -1,7 +1,7 @@
 plugins {
     `maven-publish`
     id("fabric-loom")
-     kotlin("jvm")
+    kotlin("jvm")
     kotlin("plugin.serialization")
     id("io.github.goooler.shadow") version "8.1.7"
     id("dev.kikugie.j52j")
