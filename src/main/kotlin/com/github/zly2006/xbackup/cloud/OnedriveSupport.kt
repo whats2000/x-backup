@@ -5,6 +5,8 @@ import com.github.zly2006.xbackup.Config
 import com.github.zly2006.xbackup.api.CloudStorageProvider
 import com.github.zly2006.xbackup.api.XBackupKotlinAsyncApi
 import com.github.zly2006.xbackup.retry
+import com.github.zly2006.xbackup.sizeText
+import com.github.zly2006.xbackup.sizeToString
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.header
@@ -139,7 +141,7 @@ class OnedriveSupport(
                         val endInclusive = kotlin.comparisons.minOf(start + STEP, fileSize) - 1
                         val uploadUrl = uploadSession["uploadUrl"]!!.jsonPrimitive.content
                         val part = file.readChannel(start, endInclusive).toByteArray()
-                        log.info("Uploading part: $start-$endInclusive")
+                        log.info("Uploading part: $start-$endInclusive ${sizeToString(start)}")
                         val timeStart = System.currentTimeMillis()
                         val res = javaNetClient.sendAsync(
                             HttpRequest.newBuilder(URI(uploadUrl)).apply {

@@ -57,7 +57,7 @@ fun shortDateTimeText(time: Long): MutableText {
 
 fun backupIdText(id: Int) = Text.literal("#$id").formatted(Formatting.AQUA)!!
 
-private fun sizeToString(bytes: Long): String {
+fun sizeToString(bytes: Long): String {
     val kb = bytes / 1024.0
     val mb = kb / 1024.0
     val gb = mb / 1024.0
