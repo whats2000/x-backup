@@ -64,10 +64,10 @@ fun sizeToString(bytes: Long): String {
     val tb = gb / 1024.0
 
     return when {
-        tb >= 1 -> "${String.format("%.1f", tb)} TB"
-        gb >= 1 -> "${String.format("%.1f", gb)} GB"
-        mb >= 1 -> "${String.format("%.1f", mb)} MB"
-        kb >= 1 -> "${String.format("%.1f", kb)} KB"
+        tb >= 1 -> "${String.format("%.2f", tb)} TB"
+        gb >= 1 -> "${String.format("%.2f", gb)} GB"
+        mb >= 1 -> "${String.format("%.2f", mb)} MB"
+        kb >= 1 -> "${String.format("%.2f", kb)} KB"
         else -> "$bytes B"
     }
 }
