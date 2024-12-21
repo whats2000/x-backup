@@ -1,64 +1,28 @@
 package com.github.zly2006.xbackup.cloud
 
-import com.github.zly2006.xbackup.BackupDatabaseService
-import com.github.zly2006.xbackup.Config
+import com.github.zly2006.xbackup.*
 import com.github.zly2006.xbackup.api.CloudStorageProvider
 import com.github.zly2006.xbackup.api.XBackupKotlinAsyncApi
-import com.github.zly2006.xbackup.retry
-import com.github.zly2006.xbackup.sizeText
-import com.github.zly2006.xbackup.sizeToString
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
-import io.ktor.http.isSuccess
-import io.ktor.util.cio.readChannel
-import io.ktor.util.toByteArray
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asExecutor
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancelAndJoin
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.util.*
+import io.ktor.util.cio.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.zip.ZipOutputStream
-import kotlin.apply
-import kotlin.collections.map
-import kotlin.getOrThrow
-import kotlin.io.path.Path
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.createParentDirectories
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
-import kotlin.io.path.fileSize
-import kotlin.io.path.name
-import kotlin.io.path.outputStream
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
-import kotlin.io.use
-import kotlin.let
-import kotlin.ranges.step
-import kotlin.ranges.until
-import kotlin.runCatching
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
+import kotlin.io.path.*
 
 private const val STEP = 10 * 1024 * 1024L
 
@@ -78,6 +42,17 @@ class OnedriveSupport(
         val uploadSession: JsonObject?,
         val uploadedParts: MutableList<Int>,
         val finished: Boolean,
+    )
+
+    @Serializable
+    data class UploadRequest(
+        val xbVersion: String,
+        val worldName: String,
+        val localPath: String,
+        val comment: String,
+        val zipSize: Long,
+        val md5: String,
+        val sha1: String,
     )
 
     fun getTempFileData(): TempFileData? {
@@ -118,12 +93,24 @@ class OnedriveSupport(
                 log.info("Zip file size: ${fileSize / 1024 / 1024}MB")
                 tempData.compressedSize = fileSize
                 saveTempFileData(tempData)
+                val fileMd5 = file.inputStream().digest("MD5")
+                val fileSha1 = file.inputStream().digest("SHA-1")
                 // get item-id
                 val uploadSession = tempData.uploadSession ?: retry(5) {
                     val response = httpClient.post("https://redenmc.com/api/backup/v1/onedrive/upload") {
                         header("Authorization", "Bearer ${config.cloudBackupToken}")
                         contentType(ContentType.Application.Json)
-                        setBody("backup")
+                        setBody(
+                            UploadRequest(
+                                XBackup.MOD_VERSION,
+                                service.databaseDir.name,
+                                service.databaseDir.parent.absolutePathString(),
+                                backup.comment,
+                                fileSize,
+                                fileMd5,
+                                fileSha1
+                            )
+                        )
                     }
                     require(response.status.isSuccess()) {
                         "Failed to get upload session: ${response.status}"
@@ -177,10 +164,17 @@ class OnedriveSupport(
                     httpClient.post("https://redenmc.com/api/backup/v1/onedrive/$itemId") {
                         header("Authorization", "Bearer ${config.cloudBackupToken}")
                         contentType(ContentType.Application.Json)
-                        setBody(buildJsonObject {
-                            put("localPath", service.databaseDir.parent.absolutePathString())
-                            put("worldName", service.databaseDir.name)
-                        }.toString())
+                        setBody(
+                            UploadRequest(
+                                XBackup.MOD_VERSION,
+                                service.databaseDir.name,
+                                service.databaseDir.parent.absolutePathString(),
+                                backup.comment,
+                                fileSize,
+                                fileMd5,
+                                fileSha1
+                            )
+                        )
                     }
                 }
                 Path(".tmp", "xb.upload.zip").deleteIfExists()

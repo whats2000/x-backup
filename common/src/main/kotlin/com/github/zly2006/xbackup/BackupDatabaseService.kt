@@ -23,6 +23,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.FileAlreadyExistsException
@@ -31,6 +32,7 @@ import java.nio.file.attribute.FileTime
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.*
+import kotlin.compareTo
 import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.*
 
@@ -271,17 +273,7 @@ class BackupDatabaseService(
                                 }
                             }
                         }
-                        val md5 = if (sourceFile.isFile) {
-                            sourceFile.inputStream().use { input ->
-                                val digest = MessageDigest.getInstance("MD5")
-                                val buffer = ByteArray(8192)
-                                var read: Int
-                                while (input.read(buffer).also { read = it } > 0) {
-                                    digest.update(buffer, 0, read)
-                                }
-                                digest.digest()
-                            }.joinToString("") { "%02x".format(it) }
-                        }
+                        val md5 = if (sourceFile.isFile) sourceFile.inputStream().digest("MD5")
                         else ""
                         dbQuery {
                             BackupEntryTable.selectAll().where {

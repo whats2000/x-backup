@@ -2,6 +2,8 @@ package com.github.zly2006.xbackup
 
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
+import java.io.InputStream
+import java.security.MessageDigest
 
 val log = LoggerFactory.getLogger("X Backup")!!
 
@@ -22,3 +24,13 @@ suspend inline fun <T> retry(times: Int, function: () -> T): T {
     }
     throw RuntimeException("Retry failed", lastException)
 }
+
+fun InputStream.digest(algorithm: String): String = use { input ->
+    val digest = MessageDigest.getInstance(algorithm)
+    val buffer = ByteArray(8192)
+    var read: Int
+    while (input.read(buffer).also { read = it } > 0) {
+        digest.update(buffer, 0, read)
+    }
+    digest.digest()
+}.joinToString("") { "%02x".format(it) }
