@@ -206,7 +206,17 @@ object Commands {
                 }
                 literal("version") {
                     executes {
-                        it.source.send(Utils.translate("command.xb.version", XBackup.MOD_VERSION + "(" + XBackup.GIT_COMMIT + ")"))
+                        it.source.send(
+                            Utils.translate("command.xb.version", XBackup.MOD_VERSION + "(" + XBackup.GIT_COMMIT + ")")
+                                .styled {
+                                    it.withClickEvent(
+                                        ClickEvent(
+                                            ClickEvent.Action.OPEN_URL,
+                                            "https://github.com/zly2006/x-backup"
+                                        )
+                                    )
+                                }
+                        )
                         1
                     }
                 }
