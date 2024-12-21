@@ -6,6 +6,7 @@ import com.github.zly2006.xbackup.api.XBackupKotlinAsyncApi
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.util.cio.*
@@ -113,7 +114,7 @@ class OnedriveSupport(
                         )
                     }
                     require(response.status.isSuccess()) {
-                        "Failed to get upload session: ${response.status}"
+                        "Failed to get upload session: ${response.status}\n${response.bodyAsText()}"
                     }
                     log.info("Received upload session from reden api")
                     response.body<JsonObject>()

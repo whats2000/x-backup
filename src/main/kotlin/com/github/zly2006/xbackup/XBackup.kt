@@ -42,8 +42,8 @@ object XBackup : ModInitializer {
     private val configPath = FabricLoader.getInstance().configDir.resolve("x-backup.config.json")
     val log = LoggerFactory.getLogger("XBackup")!!
     const val MOD_VERSION = /*$ mod_version*/ "0.3.8-pre.1"
-    const val GIT_COMMIT = /*$ git_commit*/ "3527deb"
-    const val COMMIT_DATE = /*$ commit_date*/ "2024-12-21T15:51:36+08:00"
+    const val GIT_COMMIT = /*$ git_commit*/ "c43b180"
+    const val COMMIT_DATE = /*$ commit_date*/ "2024-12-21T18:00:51+08:00"
     lateinit var service: BackupDatabaseService
     lateinit var server: MinecraftServer
 
