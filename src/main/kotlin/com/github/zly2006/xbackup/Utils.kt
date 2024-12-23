@@ -1,6 +1,5 @@
 package com.github.zly2006.xbackup
 
-import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.server.world.ServerWorld
@@ -19,8 +18,6 @@ object Utils {
             *args
         )
     }
-
-    val onedriveSupport = FabricLoader.getInstance().isModLoaded("x_backup_onedrive")
 
     inline fun ServerCommandSource.send(text: Text) {
         sendMessage(text)

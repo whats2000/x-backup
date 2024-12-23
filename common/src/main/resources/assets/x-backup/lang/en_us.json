@@ -33,6 +33,7 @@
   "command.xb.status": "X Backup status: %s",
   "command.xb.uploading_backup": "Uploading backup %s...",
   "command.xb.version": "X Backup %s https://github.com/zly2006/x-backup",
+  "message.xb.error.free_plan_limit": "You have reached the free plan limit (1 GB per backup, 3 backups in total), please upgrade to premium plan at https://redenmc.com/x-backup/plans",
   "message.xb.prune_finished": "Prune finished, %s backups pruned",
   "message.xb.pruning_backup": "Pruning backup %s",
   "message.xb.running_prune": "Running prune...",

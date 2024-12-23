@@ -1,6 +1,7 @@
 package com.github.zly2006.xbackup.cloud
 
 import com.github.zly2006.xbackup.*
+import com.github.zly2006.xbackup.Utils.broadcast
 import com.github.zly2006.xbackup.api.CloudStorageProvider
 import com.github.zly2006.xbackup.api.XBackupKotlinAsyncApi
 import io.ktor.client.*
@@ -17,6 +18,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import net.minecraft.text.ClickEvent
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -27,11 +29,15 @@ import kotlin.io.path.*
 
 private const val STEP = 10 * 1024 * 1024L
 
+fun <T, R> T.lazy(block: T.() -> R) = kotlin.lazy {
+    block(this)
+}
+
 class OnedriveSupport(
     private val config: Config,
     private val httpClient: HttpClient,
 ) : CloudStorageProvider {
-    private val log = LoggerFactory.getLogger("X Backup/OnrDrive")!!
+    private val log = LoggerFactory.getLogger("X Backup/OneDrive")!!
     override var bytesReceivedLastSecond = 0L
     override var bytesSentLastSecond = 0L
     private var uploadTask: Deferred<Result<Unit>>? = null
@@ -98,7 +104,7 @@ class OnedriveSupport(
                 val fileSha1 = file.inputStream().digest("SHA-1")
                 // get item-id
                 val uploadSession = tempData.uploadSession ?: retry(5) {
-                    val response = httpClient.post("https://redenmc.com/api/backup/v1/onedrive/upload") {
+                    val response = httpClient.post("https://api.redenmc.com/api/backup/v1/onedrive/upload") {
                         header("Authorization", "Bearer ${config.cloudBackupToken}")
                         contentType(ContentType.Application.Json)
                         setBody(
@@ -114,7 +120,25 @@ class OnedriveSupport(
                         )
                     }
                     require(response.status.isSuccess()) {
-                        "Failed to get upload session: ${response.status}\n${response.bodyAsText()}"
+                        runCatching {
+                            val jojo = Json.decodeFromString<JsonObject>(response.bodyAsText())
+                            log.error("Failed to get upload session: $jojo")
+                            val err = jojo["error"]?.jsonPrimitive?.content
+                            if (err?.startsWith("freePlan:") == true) {
+                                service.activeTaskProgress = -1
+                                service.activeTask = "Failed to get upload session: Free plan limit"
+                                XBackup.server.broadcast(Utils.translate("message.xb.error.free_plan_limit").styled {
+                                    it.withClickEvent(
+                                        ClickEvent(
+                                            ClickEvent.Action.OPEN_URL,
+                                            "https://redenmc.com/x-backup/plans"
+                                        )
+                                    )
+                                })
+                                throw DontRetryException(IllegalStateException("Free plan limit"))
+                            }
+                        }
+                        "Failed to get upload session: ${response.status}"
                     }
                     log.info("Received upload session from reden api")
                     response.body<JsonObject>()
@@ -126,6 +150,9 @@ class OnedriveSupport(
                 val startSlice = tempData.uploadedParts.maxOrNull() ?: 0
                 (startSlice until fileSize step STEP).map { start ->
                     retry(10) {
+                        if (getTempFileData()?.backupId != backup.id) {
+                            throw DontRetryException(IllegalStateException("Backup changed"))
+                        }
                         val endInclusive = kotlin.comparisons.minOf(start + STEP, fileSize) - 1
                         val uploadUrl = uploadSession["uploadUrl"]!!.jsonPrimitive.content
                         val part = file.readChannel(start, endInclusive).toByteArray()
