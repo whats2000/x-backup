@@ -5,25 +5,15 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.put
-import org.jetbrains.annotations.ApiStatus.ScheduledForRemoval
+import kotlinx.serialization.json.*
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.json.json
-import org.jetbrains.exposed.sql.statements.StatementContext
-import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
-import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.FileAlreadyExistsException
@@ -32,7 +22,6 @@ import java.nio.file.attribute.FileTime
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.*
-import kotlin.compareTo
 import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.*
 
@@ -101,9 +90,6 @@ class BackupDatabaseService(
         val lastModified = long("last_modified")
         val isDirectory = bool("is_directory")
         val hash = varchar("hash", 255).index()
-        @Deprecated("compress = 1 is gzip")
-        @ScheduledForRemoval
-        val gzip = bool("gzip")
 
         /**
          * 0: no compress
@@ -134,15 +120,12 @@ class BackupDatabaseService(
         override val id: Int,
         override val path: String,
         override val size: Long,
-        private var _zippedSize: Long,
+        override val zippedSize: Long,
         override val lastModified: Long,
         override val isDirectory: Boolean,
         override val hash: String,
-        private var _compress: Int,
+        override val compress: Int,
     ) : IBackupEntry {
-        override val zippedSize: Long get() = _zippedSize
-        override val compress: Int get() = _compress
-
         override fun toString(): String {
             return "$id:/$path"
         }
@@ -332,7 +315,6 @@ class BackupDatabaseService(
                                 it[this.isDirectory] = sourceFile.isDirectory
                                 it[this.hash] = md5
                                 it[this.zippedSize] = zippedSize
-                                it[this.gzip] = false
                                 it[this.compress] = if (gzip) 1 else 0
                             }.resultedValues!!.single().toBackupEntry()
                             newEntries.add(backupEntry)
@@ -682,7 +664,8 @@ class BackupDatabaseService(
         return transaction {
             BackupTable.selectAll()
                 .orderBy(BackupTable.id to SortOrder.DESC)
-                .limit(limit, offset.toLong()).toList()
+                .limit(limit)
+                .offset(offset.toLong()).toList()
                 .map { it.toBackup() }
         }
     }
@@ -724,16 +707,7 @@ class BackupDatabaseService(
             this[BackupEntryTable.lastModified],
             this[BackupEntryTable.isDirectory],
             this[BackupEntryTable.hash],
-            if (this[BackupEntryTable.gzip]) {
-                BackupEntryTable.update({
-                    BackupEntryTable.id eq this@toBackupEntry[BackupEntryTable.id]
-                }) {
-                    it[compress] = 1
-                    it[gzip] = false
-                }
-                1
-            }
-            else this[BackupEntryTable.compress].toInt(),
+            this[BackupEntryTable.compress].toInt(),
         )
     }
 }
