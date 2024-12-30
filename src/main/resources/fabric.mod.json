@@ -26,8 +26,9 @@
     "x-backup.mixins.json"
   ],
   "depends": {
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=1.12",
     "fabricloader": ">=0.15",
-    "minecraft": "${mcdep}",
-    "fabric-language-kotlin": ">=1.12"
+    "minecraft": "${mcdep}"
   }
 }
