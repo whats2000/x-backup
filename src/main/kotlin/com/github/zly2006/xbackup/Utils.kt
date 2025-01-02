@@ -14,7 +14,7 @@ object Utils {
     inline fun translate(key: String, vararg args: Any): MutableText {
         return Text.translatableWithFallback(
             key,
-            I18n.langMap[key],
+            I18n[key],
             *args
         )
     }

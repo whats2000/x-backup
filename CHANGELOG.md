@@ -1,3 +1,5 @@
-## 0.3.7
+## 0.3.8
 
-Continuable cloud backup uploading.
+### Fixes:
+
+Fixed database backups. Now it only keeps the last five backups.

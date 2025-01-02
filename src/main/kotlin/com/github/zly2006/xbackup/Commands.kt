@@ -309,7 +309,7 @@ object Commands {
                             val comment = try {
                                 StringArgumentType.getString(it, "comment")
                             } catch (_: IllegalArgumentException) {
-                                I18n.langMap["command.xb.manual_backup"] ?: "Manual backup"
+                                I18n["command.xb.manual_backup"]
                             }
                             XBackup.ensureNotBusy {
                                 it.source.server.broadcast(

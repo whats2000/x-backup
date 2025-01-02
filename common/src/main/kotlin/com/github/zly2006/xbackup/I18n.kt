@@ -9,7 +9,11 @@ import java.io.InputStream
 object I18n {
     private val log = LoggerFactory.getLogger("X-Backup/I18n")!!
     const val DEFAULT_LANGUAGE = "en_us"
-    val langMap = mutableMapOf<String, String>()
+    private val langMap = mutableMapOf<String, String>()
+
+    operator fun get(key: String): String {
+        return langMap[key] ?: key
+    }
 
     /**
      * Try to set the language to the specified language code.

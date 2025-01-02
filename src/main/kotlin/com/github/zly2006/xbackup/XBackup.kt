@@ -282,7 +282,7 @@ object XBackup : ModInitializer {
                             server.broadcast(Utils.translate("message.xb.running_scheduled_backup"))
                             val (_, _, backId, totalSize, compressedSize, addedSize, millis) = service.createBackup(
                                 server.getSavePath(WorldSavePath.ROOT).toAbsolutePath(),
-                                I18n.langMap["message.xb.scheduled_backup"] ?: "Scheduled backup",
+                                I18n["message.xb.scheduled_backup"],
                                 metadata = buildJsonObject {
                                     put("scheduled", true)
                                     put("interval", config.backupInterval)
@@ -305,6 +305,11 @@ object XBackup : ModInitializer {
                                     .createParentDirectories(),
                                 StandardCopyOption.REPLACE_EXISTING
                             )
+                            // delete old backups in ./xb.backups, keep the latest 5
+                            val backups = Path("xb.backups").listDirectoryEntries().filter { it.isDirectory() }
+                            backups.sortedByDescending { it.getLastModifiedTime().toMillis() }
+                                .drop(5)
+                                .forEach { it.toFile().deleteRecursively() }
                             server.broadcast(
                                 Utils.translate(
                                     "message.xb.scheduled_backup_finished",
