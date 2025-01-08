@@ -213,7 +213,7 @@ object XBackup : ModInitializer {
             }
             if (!config.mirrorMode) {
                 startCrontabJob(server)
-                if (config.cloudBackupToken != null) {
+                if (config.cloudBackupToken != null && false) {
                     GlobalScope.launch(server.asCoroutineDispatcher()) {
                         while (XBackup.server.running) {
                             delay(1000)
