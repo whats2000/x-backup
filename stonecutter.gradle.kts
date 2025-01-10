@@ -7,7 +7,7 @@ plugins {
     id("io.github.goooler.shadow") version "8.1.7" apply false
     base
     id("dev.kikugie.j52j") version "1.0.2" apply false
-    id("me.modmuss50.mod-publish-plugin") version "0.7.+" apply false
+    id("me.modmuss50.mod-publish-plugin") version "0.8.4" apply false
     id("org.ajoberstar.grgit") version "5.0.0-rc.3"
 }
 stonecutter active "1.21.1" /* [SC] DO NOT EDIT */
