@@ -651,9 +651,11 @@ object Commands {
                     XBackup.serverStopHook = {}
                     runBlocking {
                         XBackup.reason = "Restoring backup #${backup.id}"
-                        val result = XBackup.service.restore(backup.id, path.normalize()) { !filter(it) }
-                        XBackup.reason = "Restoring backup #${backup.id} finished, launching server"
-                        exitProcess(233)
+                        XBackup.service.restore(backup.id, path.normalize()) { !filter(it) }
+                        XBackup.reason = "Restoring backup #${backup.id} finished, launching/stopping server"
+                        if (forceStop) {
+                            forceStopServer()
+                        }
                     }
                 } catch (e: Throwable) {
                     XBackup.log.error("[X Backup] Error while restoring backup #${backup.id}", e)
@@ -687,4 +689,13 @@ object Commands {
             source.hasPermissionLevel(defaultLevel)
         }
     }
+}
+
+fun forceStopServer(): Nothing {
+    Thread {
+        Thread.sleep(5000)
+        XBackup.log.error("[X Backup] Server did not stop in 5 seconds, force stopping")
+        Runtime.getRuntime().halt(233)
+    }.start()
+    exitProcess(233)
 }
