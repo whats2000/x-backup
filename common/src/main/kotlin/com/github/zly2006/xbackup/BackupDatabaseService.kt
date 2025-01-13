@@ -238,8 +238,15 @@ class BackupDatabaseService(
                                 var exp = BackupEntryTable.path eq path.toString() and
                                         (BackupEntryTable.isDirectory eq sourceFile.isDirectory)
                                 if (sourceFile.isFile) {
-                                    exp = exp and (BackupEntryTable.size eq sourceFile.length()) and
-                                            (BackupEntryTable.lastModified eq sourceFile.lastModified())
+                                    exp = if (sourceFile.lastModified() % 1000 == 0L) {
+                                        // disable lastModified and size check since it's not accurate
+                                        Op.FALSE and exp
+                                    }
+                                    else {
+                                        // check lastModified and size
+                                        exp and (BackupEntryTable.size eq sourceFile.length()) and
+                                                (BackupEntryTable.lastModified eq sourceFile.lastModified())
+                                    }
                                 }
                                 exp
                             }.map { it.toBackupEntry() }.firstOrNull {
