@@ -1,5 +1,7 @@
-## 0.3.8
+## 0.3.9
 
 ### Fixes:
 
-Fixed database backups. Now it only keeps the last five backups.
+Remove a mixin to the storage system.
+
+More checks on mtime accuracy.
