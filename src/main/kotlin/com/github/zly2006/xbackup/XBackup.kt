@@ -42,13 +42,14 @@ object XBackup : ModInitializer {
     private val configPath = FabricLoader.getInstance().configDir.resolve("x-backup.config.json")
     val log = LoggerFactory.getLogger("XBackup")!!
     const val MOD_VERSION = /*$ mod_version*/ "0.3.9"
-    const val GIT_COMMIT = /*$ git_commit*/ "97ea5cd"
-    const val COMMIT_DATE = /*$ commit_date*/ "2025-01-10T23:05:24+08:00"
-    lateinit var service: BackupDatabaseService
-    lateinit var server: MinecraftServer
+    const val GIT_COMMIT = /*$ git_commit*/ "2168cba"
+    const val COMMIT_DATE = /*$ commit_date*/ "2025-01-13T20:28:49+08:00"
+    var _service: BackupDatabaseService? = null
+    val service get() = _service!!
+    var server: MinecraftServer? = null
 
     @get:JvmName("isServerStarted")
-    val serverStarted get() = ::server.isInitialized
+    val serverStarted get() = server != null
     @get:JvmName("isRestoring")
     var restoring = false
     var serverStopHook: (MinecraftServer) -> Unit = {}
@@ -143,6 +144,8 @@ object XBackup : ModInitializer {
         }
         ServerLifecycleEvents.SERVER_STARTED.register { server ->
             this.server = server
+
+            server.commandManager.executeWithPrefix(XBackup.server!!.commandSource ,"1")
             kotlin.runCatching {
                 // sync client language to the integrated server
                 config.language = I18n.setLanguage(MinecraftClient.getInstance().options.language)
@@ -168,7 +171,7 @@ object XBackup : ModInitializer {
                     log.error("Failed to load config from source server!")
                 }
                 val config = sourceConfig ?: config
-                service = BackupDatabaseService(
+                _service = BackupDatabaseService(
                     worldPath,
                     database,
                     Path(this.config.mirrorFrom!!).resolve(config.blobPath).absolute().normalize(),
@@ -176,7 +179,7 @@ object XBackup : ModInitializer {
                 )
             }
             else {
-                service = BackupDatabaseService(
+                _service = BackupDatabaseService(
                     worldPath,
                     database,
                     Path("").absolute().resolve(config.blobPath).normalize(),
@@ -213,9 +216,9 @@ object XBackup : ModInitializer {
             }
             if (!config.mirrorMode) {
                 startCrontabJob(server)
-                if (config.cloudBackupToken != null && false) {
+                if (config.cloudBackupToken != null && FabricLoader.getInstance().isDevelopmentEnvironment) {
                     GlobalScope.launch(server.asCoroutineDispatcher()) {
-                        while (XBackup.server.running) {
+                        while (XBackup.server?.running == true) {
                             delay(1000)
                             val cs = service.cloudStorageProvider
                             if (service.activeTaskProgress != -1 &&
@@ -238,6 +241,9 @@ object XBackup : ModInitializer {
         }
         ServerLifecycleEvents.SERVER_STOPPING.register {
             XBackupApi.setInstance(null)
+            _service?.close()
+            _service = null
+            server = null
             runBlocking {
                 crontabJob?.cancelAndJoin()
             }
@@ -377,11 +383,11 @@ object XBackup : ModInitializer {
     }
 
     fun ensureNotBusy(
-        context: CoroutineContext = server.asCoroutineDispatcher(),
+        context: CoroutineContext = server!!.asCoroutineDispatcher(),
         source: ServerCommandSource? = null,
         block: suspend () -> Unit
     ) {
-        require(server.isOnThread)
+        require(server!!.isOnThread)
         if (isBusy) {
             throw SimpleCommandExceptionType(Text.of("Backup is already running")).create()
         }

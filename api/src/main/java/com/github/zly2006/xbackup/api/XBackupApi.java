@@ -12,6 +12,7 @@ class Instance {
     static XBackupApi instance;
 }
 
+@SuppressWarnings("unused")
 public interface XBackupApi {
     static XBackupApi getInstance() {
         return Instance.instance;

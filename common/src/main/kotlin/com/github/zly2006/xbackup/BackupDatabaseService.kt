@@ -685,6 +685,10 @@ class BackupDatabaseService(
         BackupTable.selectAll().count().toInt()
     }
 
+    fun close() {
+        syncExecutor.close()
+    }
+
     companion object {
         private fun ResultRow.toBackup(): Backup {
             val id = this[BackupTable.id].value

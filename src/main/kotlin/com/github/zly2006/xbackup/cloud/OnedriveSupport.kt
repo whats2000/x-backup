@@ -11,6 +11,8 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.ktor.util.*
 import io.ktor.util.cio.*
+import io.ktor.utils.io.cancel
+import io.ktor.utils.io.copyAndClose
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asDeferred
 import kotlinx.serialization.Serializable
@@ -127,7 +129,7 @@ class OnedriveSupport(
                             if (err?.startsWith("freePlan:") == true) {
                                 service.activeTaskProgress = -1
                                 service.activeTask = "Failed to get upload session: Free plan limit"
-                                XBackup.server.broadcast(Utils.translate("message.xb.error.free_plan_limit").styled {
+                                XBackup.server?.broadcast(Utils.translate("message.xb.error.free_plan_limit").styled {
                                     it.withClickEvent(
                                         ClickEvent(
                                             ClickEvent.Action.OPEN_URL,
@@ -155,7 +157,9 @@ class OnedriveSupport(
                         }
                         val endInclusive = kotlin.comparisons.minOf(start + STEP, fileSize) - 1
                         val uploadUrl = uploadSession["uploadUrl"]!!.jsonPrimitive.content
-                        val part = file.readChannel(start, endInclusive).toByteArray()
+                        val channel = file.readChannel(start, endInclusive)
+                        val part = channel.toByteArray()
+                        channel.cancel()
                         log.info("Uploading part: $start-$endInclusive ${sizeToString(start)}")
                         val timeStart = System.currentTimeMillis()
                         val res = javaNetClient.sendAsync(
