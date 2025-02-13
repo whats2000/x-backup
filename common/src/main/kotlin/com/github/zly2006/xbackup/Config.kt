@@ -77,6 +77,9 @@ class Config {
     @SerialName("blob_path")
     val blobPath = "blob"
 
+    @SerialName("independent_blobs")
+    val independentBlobs = false
+
     @SerialName("backup_interval")
     var backupInterval = 10800
 
