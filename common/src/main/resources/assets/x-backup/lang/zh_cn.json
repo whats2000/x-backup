@@ -10,7 +10,6 @@
   "command.xb.backup_not_found": "未找到备份 %s",
   "command.xb.backup_ok": "备份 %s 正常",
   "command.xb.backup_uploaded": "备份 %s 已上传",
-  "message.xb.error.free_plan_limit": "你已达到免费限额 (每个备份最多1GB, 总共 3 个备份)，请升级到高级计划 https://redenmc.com/x-backup/plans",
   "command.xb.backups": "备份:",
   "command.xb.checking_backup": "正在检查备份 %s...",
   "command.xb.click_delete": "点击删除",
@@ -34,6 +33,7 @@
   "command.xb.status": "X Backup 状态: %s",
   "command.xb.uploading_backup": "正在上传备份 %s...",
   "command.xb.version": "X Backup %s https://github.com/zly2006/x-backup",
+  "message.xb.error.free_plan_limit": "你已达到免费限额 (每个备份最多1GB, 总共 3 个备份)，请升级到高级计划 https://redenmc.com/x-backup/plans",
   "message.xb.prune_finished": "清理完成，已删除 %s 个备份",
   "message.xb.pruning_backup": "正在清理旧备份 %s",
   "message.xb.running_prune": "正在清理...",
@@ -45,6 +45,7 @@
   "xb.button.backups_entry": "管理备份",
   "xb.button.delete_backup": "删除备份",
   "xb.button.restore_backup": "还原备份",
+  "xb.gui.backups.restore_check_failed": "此备份已损坏，无法回档！",
   "xb.gui.backups.restored": "成功还原备份",
   "xb.gui.backups.title": "备份列表",
   "xb.gui.no_polylib": "未安装 PolyLib，请安装后使用 GUI 功能。"

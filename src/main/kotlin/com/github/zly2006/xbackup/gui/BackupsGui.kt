@@ -120,6 +120,14 @@ class BackupsGui(private val service: BackupDatabaseService, val worldRoot: Path
 
     private fun restoreSelected(gui: ModularGui) {
         if (selected == null) return
+        if (!service.check(selected!!)) {
+            OptionDialog.simpleInfoDialog(
+                gui,
+                Text.translatable("xb.gui.backups.restore_check_failed")
+                    .formatted(Formatting.RED)
+            )
+            return
+        }
         runBlocking {
             service.restore(selected!!.id, worldRoot) { false }
         }
