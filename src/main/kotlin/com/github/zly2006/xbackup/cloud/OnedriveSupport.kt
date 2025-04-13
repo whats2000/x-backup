@@ -159,7 +159,6 @@ class OnedriveSupport(
                         val uploadUrl = uploadSession["uploadUrl"]!!.jsonPrimitive.content
                         val channel = file.readChannel(start, endInclusive)
                         val part = channel.toByteArray()
-                        channel.cancel()
                         log.info("Uploading part: $start-$endInclusive ${sizeToString(start)}")
                         val timeStart = System.currentTimeMillis()
                         val res = javaNetClient.sendAsync(

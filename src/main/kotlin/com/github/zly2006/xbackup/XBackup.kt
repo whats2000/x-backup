@@ -25,6 +25,7 @@ import net.minecraft.text.Text
 import net.minecraft.util.Util
 import net.minecraft.util.WorldSavePath
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.slf4j.LoggerFactory
 import org.sqlite.SQLiteConfig
 import org.sqlite.SQLiteConnection
@@ -41,9 +42,9 @@ object XBackup : ModInitializer {
     lateinit var config: Config
     private val configPath = FabricLoader.getInstance().configDir.resolve("x-backup.config.json")
     val log = LoggerFactory.getLogger("XBackup")!!
-    const val MOD_VERSION = /*$ mod_version*/ "0.3.9"
-    const val GIT_COMMIT = /*$ git_commit*/ "2168cba"
-    const val COMMIT_DATE = /*$ commit_date*/ "2025-01-13T20:28:49+08:00"
+    const val MOD_VERSION = /*$ mod_version*/ "0.3.10"
+    const val GIT_COMMIT = /*$ git_commit*/ "b5c84f2"
+    const val COMMIT_DATE = /*$ commit_date*/ "2025-02-13T13:10:50+08:00"
     var _service: BackupDatabaseService? = null
     val service get() = _service!!
     var server: MinecraftServer? = null
@@ -240,10 +241,12 @@ object XBackup : ModInitializer {
             }
         }
         ServerLifecycleEvents.SERVER_STOPPING.register {
-            XBackupApi.setInstance(null)
-            _service?.close()
-            _service = null
-            server = null
+            if (!restoring) {
+                XBackupApi.setInstance(null)
+                _service?.close()
+                _service = null
+                server = null
+            }
             runBlocking {
                 crontabJob?.cancelAndJoin()
             }
@@ -262,6 +265,7 @@ object XBackup : ModInitializer {
                 url = "jdbc:sqlite:$worldPath/x_backup.db"
             }
         )
+        TransactionManager.defaultDatabase = database
         return database
     }
 

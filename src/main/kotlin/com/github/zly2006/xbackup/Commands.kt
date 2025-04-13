@@ -638,8 +638,9 @@ object Commands {
         recheck: Boolean = true,
         filter: (Path) -> Boolean = { true },
     ) {
+        val service = XBackup.service
         // Note: on server thread
-        if (recheck && !XBackup.service.check(backup)) {
+        if (recheck && !service.check(backup)) {
             it.source.sendError(Utils.translate("command.xb.backup_corrupted", backupIdText(backup.id)).apply {
                 hover(Utils.translate("command.xb.backup_corrupted.force", backupIdText(backup.id)))
             })
@@ -652,7 +653,7 @@ object Commands {
             it.source.server.setAutoSaving(false)
             XBackup.disableSaving = true
             runBlocking {
-                XBackup.service.createBackup(path.normalize(), "Auto-backup before restoring to #${backup.id}", true) { true }
+                service.createBackup(path.normalize(), "Auto-backup before restoring to #${backup.id}", true) { true }
             }
             it.source.server.setAutoSaving(true)
             XBackup.disableSaving = false
@@ -668,7 +669,7 @@ object Commands {
                     XBackup.serverStopHook = {}
                     runBlocking {
                         XBackup.reason = "Restoring backup #${backup.id}"
-                        XBackup.service.restore(backup.id, path.normalize()) { !filter(it) }
+                        service.restore(backup.id, path.normalize()) { !filter(it) }
                         XBackup.reason = "Restoring backup #${backup.id} finished, launching/stopping server"
                         if (forceStop) {
                             forceStopServer()
