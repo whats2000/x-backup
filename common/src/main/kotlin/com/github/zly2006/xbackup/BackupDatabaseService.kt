@@ -485,7 +485,12 @@ class BackupDatabaseService(
                             }
                         }
                     } catch (e: RuntimeException) {
-                        log.error("Max retry exceeded, file: $path", e)
+                        if (it.key.endsWith("_old")) {
+                            log.info("Failed to restore $path, but it's an backup file, ignoring")
+                        }
+                        else {
+                            log.error("Max retry exceeded, file: $path", e)
+                        }
                         log.info("worked: $worked, DB lastModified: ${it.value.lastModified}, DB size: ${it.value.size}")
                     }
                 }
