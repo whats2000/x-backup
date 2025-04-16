@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.nio.file.FileAlreadyExistsException
@@ -216,7 +217,7 @@ class BackupDatabaseService(
         comment: String,
         temporary: Boolean = false,
         metadata: JsonObject? = null,
-        predicate: (Path) -> Boolean,
+        predicate: (Path) -> Boolean = { true },
     ): BackupResult {
         if (blobDir.startsWith(root.absolute().normalize())) {
             error("Blob directory cannot be inside the backup directory")
@@ -226,7 +227,7 @@ class BackupDatabaseService(
 
         val newEntries = ConcurrentHashMap.newKeySet<BackupEntry>()
         val entries = root.normalize().toFile().walk().filter {
-            it.name !in ignoredFiles && predicate(it.toPath())
+            !shouldIgnore(it) && predicate(it.toPath())
         }.map { sourceFile ->
             @Suppress("SuspendFunctionOnCoroutineScope")
             this.async(Dispatchers.IO) {
@@ -406,6 +407,24 @@ class BackupDatabaseService(
 
     override fun getBackup(id: Int): IBackup? = runBlocking { getBackupInternal(id) }
 
+    fun shouldIgnore(file: File): Boolean {
+        // todo: '**' pattern
+        for (pattern in ignoredFiles) {
+            if ('*' !in pattern) {
+                if (file.name == pattern) {
+                    log.debug("Ignoring file {}, because it matches {}", file, pattern)
+                    return true
+                }
+            } else {
+                if (file.name.matches(Regex(pattern.replace("*", ".*")))) {
+                    log.debug("Ignoring file {}, because it matches {}", file, pattern)
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
     /**
      * Restore backup to target directory
      *
@@ -419,7 +438,7 @@ class BackupDatabaseService(
         val map = backup.entries.associateBy { it.path }.filter { !ignored(Path(it.key)) }
         for (it in target.normalize().toFile().walk().drop(1)) {
             val path = target.normalize().relativize(it.toPath()).normalize()
-            if (it.name in ignoredFiles || ignored(path))
+            if (shouldIgnore(it) || ignored(path))
                 continue
             val entry = map[path.toString()]
             if (entry == null && it.isFile) {

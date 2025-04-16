@@ -298,7 +298,7 @@ object XBackup : ModInitializer {
                                     put("interval", config.backupInterval)
                                     put("mod_ver", MOD_VERSION)
                                 }
-                            ) { true }
+                            )
                             val localBackup = File("x_backup.db.back")
                             localBackup.delete()
                             try {

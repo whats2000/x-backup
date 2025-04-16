@@ -10,7 +10,7 @@
   "contact": {
     "sources": "https://github.com/zly2006/x-backup"
   },
-  "license": "CC0-1.0",
+  "license": "AGPL-3.0-only",
   "icon": "assets/x-backup/icon.png",
   "environment": "*",
   "entrypoints": {

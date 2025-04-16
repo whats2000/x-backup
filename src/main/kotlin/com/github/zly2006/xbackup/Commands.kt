@@ -343,7 +343,7 @@ object Commands {
                                         put("mod_ver", XBackup.MOD_VERSION)
                                         put("source", it.source.name)
                                     }
-                                ) { true }
+                                )
                                 it.source.server.broadcast(
                                     Utils.translate(
                                         "command.xb.backup_finished",
@@ -653,7 +653,7 @@ object Commands {
             it.source.server.setAutoSaving(false)
             XBackup.disableSaving = true
             runBlocking {
-                service.createBackup(path.normalize(), "Auto-backup before restoring to #${backup.id}", true) { true }
+                service.createBackup(path.normalize(), "Auto-backup before restoring to #${backup.id}", true)
             }
             it.source.server.setAutoSaving(true)
             XBackup.disableSaving = false

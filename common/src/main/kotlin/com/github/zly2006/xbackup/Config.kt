@@ -71,7 +71,8 @@ class Config {
     val ignoredFiles: List<String> = listOf(
         "session.lock",
         "fake_player.gca.json",
-        "ledger.sqlite"
+        "ledger.sqlite",
+        "**_old"
     )
 
     @SerialName("blob_path")

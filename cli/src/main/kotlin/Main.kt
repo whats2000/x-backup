@@ -82,7 +82,7 @@ suspend fun main() {
 
                 "backup" -> {
                     val comment = parts.drop(1).joinToString(" ")
-                    service.createBackup(worldRoot, comment, false) { true }
+                    service.createBackup(worldRoot, comment, false)
                 }
 
                 "list" -> {
