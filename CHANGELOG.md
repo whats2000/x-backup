@@ -1,7 +1,6 @@
-## 0.3.9
+## 0.3.11
 
-### Fixes:
-
-Remove a mixin to the storage system.
-
-More checks on mtime accuracy.
+Support 1.21.5
+Support wildcard in ignoring patterns.
+It is suggested to add `*.dat_old` to the ignore minecraft backup files.
+Added /xb reload-config

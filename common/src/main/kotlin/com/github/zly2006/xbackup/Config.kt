@@ -72,7 +72,7 @@ class Config {
         "session.lock",
         "fake_player.gca.json",
         "ledger.sqlite",
-        "**_old"
+        "**.dat_old"
     )
 
     @SerialName("blob_path")

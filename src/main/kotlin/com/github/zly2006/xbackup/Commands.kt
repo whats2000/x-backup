@@ -454,6 +454,14 @@ object Commands {
                         1
                     }
                 }
+                literal("reload-config") {
+                    requires = checkPermission("x_backup.reload_config", 4)
+                    executes {
+                        XBackup.loadConfig()
+                        it.source.send(Utils.translate("command.xb.config_reloaded"))
+                        1
+                    }
+                }
                 literal("debug") {
                     requires = checkPermission("x_backup.debug", 4)
                     literal("inspect") {
