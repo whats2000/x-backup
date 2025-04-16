@@ -28,6 +28,7 @@ import net.minecraft.text.Text
 import net.minecraft.util.Formatting
 import net.minecraft.util.Util
 import net.minecraft.util.WorldSavePath
+import java.net.URI
 import java.nio.file.Path
 import java.text.SimpleDateFormat
 import java.util.*
@@ -42,7 +43,8 @@ fun shortDateTimeText(time: Long): MutableText {
         SimpleDateFormat("HH:mm").apply {
             timeZone = TimeZone.getDefault()
         }.format(time)
-    } else {
+    }
+    else {
         SimpleDateFormat("MM-dd HH:mm").apply {
             timeZone = TimeZone.getDefault()
         }.format(time)
@@ -77,10 +79,14 @@ fun sizeText(bytes: Long) = Text.literal(sizeToString(bytes)).formatted(Formatti
 fun MutableText.hover(literalText: MutableText) {
     styled {
         it.withHoverEvent(
-            HoverEvent(
+            //? if >=1.21.5 {
+            HoverEvent.ShowText(literalText)
+            //?} else {
+            /*HoverEvent(
                 HoverEvent.Action.SHOW_TEXT,
                 literalText
             )
+            *///?}
         )
     }
 }
@@ -88,10 +94,14 @@ fun MutableText.hover(literalText: MutableText) {
 fun MutableText.clickRun(cmd: String) {
     styled {
         it.withClickEvent(
-            ClickEvent(
+            //? if >=1.21.5 {
+            ClickEvent.RunCommand(cmd)
+            //?} else {
+            /*ClickEvent(
                 ClickEvent.Action.RUN_COMMAND,
                 cmd
             )
+            *///?}
         )
     }
 }
@@ -122,7 +132,7 @@ object Commands {
             }
 
             literal("1") {
-                requires = {false}
+                requires = { false }
                 executes {
                     println(11)
                     1
@@ -138,7 +148,12 @@ object Commands {
                         if (XBackup.config.mirrorMode) {
                             source.send(Text.literal("X Backup is in mirror mode").formatted(Formatting.GOLD))
                         }
-                        source.send(Utils.translate("command.xb.background_task_status", XBackup.backgroundState.toString()))
+                        source.send(
+                            Utils.translate(
+                                "command.xb.background_task_status",
+                                XBackup.backgroundState.toString()
+                            )
+                        )
                         if (XBackup.service.activeTaskProgress != -1) {
                             source.send(Text.literal("云备份任务：${XBackup.service.activeTask} ${XBackup.service.activeTaskProgress}%"))
                             source.send(networkStatsText())
@@ -195,7 +210,8 @@ object Commands {
                             val backups = XBackup.service.listBackups(offset, 6)
                             if (backups.isEmpty()) {
                                 it.source.send(Utils.translate("command.xb.no_backups_found"))
-                            } else {
+                            }
+                            else {
                                 it.source.send(Utils.translate("command.xb.backups"))
                                 backups.forEach { backup ->
                                     it.source.send(
@@ -227,10 +243,14 @@ object Commands {
                             Utils.translate("command.xb.version", XBackup.MOD_VERSION + "(" + XBackup.GIT_COMMIT + ")")
                                 .styled {
                                     it.withClickEvent(
-                                        ClickEvent(
+                                        //? if >=1.21.5 {
+                                        ClickEvent.OpenUrl(URI("https://github.com/zly2006/x-backup"))
+                                        //?} else {
+                                        /*ClickEvent(
                                             ClickEvent.Action.OPEN_URL,
                                             "https://github.com/zly2006/x-backup"
                                         )
+                                        *///?}
                                     )
                                 }
                         )
@@ -279,7 +299,8 @@ object Commands {
         }
         if (XBackup.config.mirrorMode) {
             registerMirrorMode(dispatcher)
-        } else {
+        }
+        else {
             registerBackupMode(dispatcher)
         }
     }
@@ -356,10 +377,20 @@ object Commands {
                                 val id = result.backId
                                 if (XBackup.config.cloudBackupToken != null) {
                                     XBackup.service.launch(Dispatchers.Default) {
-                                        it.source.server.broadcast(Utils.translate("command.xb.uploading_backup", backupIdText(id)))
+                                        it.source.server.broadcast(
+                                            Utils.translate(
+                                                "command.xb.uploading_backup",
+                                                backupIdText(id)
+                                            )
+                                        )
                                         XBackup.isBusy = false
                                         XBackup.service.cloudStorageProvider.uploadBackup(XBackup.service, id)
-                                        it.source.server.broadcast(Utils.translate("command.xb.backup_uploaded", backupIdText(id)))
+                                        it.source.server.broadcast(
+                                            Utils.translate(
+                                                "command.xb.backup_uploaded",
+                                                backupIdText(id)
+                                            )
+                                        )
                                     }
                                 }
                             }
@@ -389,7 +420,8 @@ object Commands {
                                     val id = IntegerArgumentType.getInteger(it, "id")
                                     val from = ColumnPosArgumentType.getColumnPos(it, "from")
                                     val to = ColumnPosArgumentType.getColumnPos(it, "to")
-                                    val path = it.source.server.getSavePath(WorldSavePath.ROOT).toAbsolutePath().normalize()
+                                    val path =
+                                        it.source.server.getSavePath(WorldSavePath.ROOT).toAbsolutePath().normalize()
                                     val world = it.source.world
                                     val backup = getBackup(id)
                                     val minX = min(from.x, to.x)
@@ -414,6 +446,7 @@ object Commands {
                                                 }
                                                 false
                                             }
+
                                             "mcc" -> {
                                                 val x = p.fileName.toString().split(".")[1].toInt()
                                                 val z = p.fileName.toString().split(".")[2].toInt()
@@ -422,6 +455,7 @@ object Commands {
                                                 }
                                                 false
                                             }
+
                                             else -> false
                                         }
                                     }
@@ -501,7 +535,8 @@ object Commands {
                             XBackup.ensureNotBusy(Dispatchers.IO) {
                                 it.source.send(Utils.translate("command.xb.uploading_backup", backupIdText(id)))
                                 XBackup.isBusy = false
-                                val result = XBackup.service.cloudStorageProvider.uploadBackup(XBackup.service, backup.id)
+                                val result =
+                                    XBackup.service.cloudStorageProvider.uploadBackup(XBackup.service, backup.id)
                                 it.source.send(Utils.translate("command.xb.backup_uploaded", backupIdText(id)))
                             }
                             1
@@ -580,7 +615,8 @@ object Commands {
                                 val result = XBackup.service.check(backup)
                                 if (result) {
                                     it.source.send(Utils.translate("command.xb.backup_ok", backupIdText(id)))
-                                } else {
+                                }
+                                else {
                                     it.source.send(Utils.translate("command.xb.backup_corrupted", backupIdText(id)))
                                 }
                             }
@@ -616,12 +652,22 @@ object Commands {
                         executes {
                             XBackup.config.backupInterval = it.getArgument("seconds", Int::class.java)
                             XBackup.saveConfig()
-                            it.source.send(Utils.translate("command.xb.set_backup_interval", XBackup.config.backupInterval))
+                            it.source.send(
+                                Utils.translate(
+                                    "command.xb.set_backup_interval",
+                                    XBackup.config.backupInterval
+                                )
+                            )
                             1
                         }
                     }
                     executes {
-                        it.source.send(Utils.translate("command.xb.current_backup_interval", XBackup.config.backupInterval))
+                        it.source.send(
+                            Utils.translate(
+                                "command.xb.current_backup_interval",
+                                XBackup.config.backupInterval
+                            )
+                        )
                         1
                     }
                 }

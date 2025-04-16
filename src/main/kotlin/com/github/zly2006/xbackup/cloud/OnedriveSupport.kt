@@ -131,10 +131,14 @@ class OnedriveSupport(
                                 service.activeTask = "Failed to get upload session: Free plan limit"
                                 XBackup.server?.broadcast(Utils.translate("message.xb.error.free_plan_limit").styled {
                                     it.withClickEvent(
-                                        ClickEvent(
+                                        //? if >=1.21.5 {
+                                        ClickEvent.OpenUrl(URI("https://redenmc.com/x-backup/plans"))
+                                        //?} else {
+                                        /*ClickEvent(
                                             ClickEvent.Action.OPEN_URL,
                                             "https://redenmc.com/x-backup/plans"
                                         )
+                                        *///?}
                                     )
                                 })
                                 throw DontRetryException(IllegalStateException("Free plan limit"))

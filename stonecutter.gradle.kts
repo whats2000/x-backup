@@ -10,7 +10,7 @@ plugins {
     id("me.modmuss50.mod-publish-plugin") version "0.8.4" apply false
     id("org.ajoberstar.grgit") version "5.0.0-rc.3"
 }
-stonecutter active "1.21.1" /* [SC] DO NOT EDIT */
+stonecutter active "1.21.5" /* [SC] DO NOT EDIT */
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
