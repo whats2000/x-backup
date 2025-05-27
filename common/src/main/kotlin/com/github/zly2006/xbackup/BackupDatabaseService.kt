@@ -230,7 +230,7 @@ class BackupDatabaseService(
             !shouldIgnore(it) && predicate(it.toPath())
         }.map { sourceFile ->
             @Suppress("SuspendFunctionOnCoroutineScope")
-            this.async(Dispatchers.IO) {
+            this.async(Dispatchers.IO.limitedParallelism(Runtime.getRuntime().availableProcessors() / 2)) {
                 retry(5) {
                     try {
                         val path = root.normalize().relativize(sourceFile.toPath()).normalize()

@@ -72,7 +72,10 @@ class Config {
         "session.lock",
         "fake_player.gca.json",
         "ledger.sqlite",
-        "**.dat_old"
+        "**.dat_old",
+        "DistantHorizons.sqlite",
+        "DistantHorizons.sqlite-shm",
+        "DistantHorizons.sqlite-wal",
     )
 
     @SerialName("blob_path")
