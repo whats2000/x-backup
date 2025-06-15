@@ -741,7 +741,7 @@ object Commands {
                         XBackup.restoring = false
                         it.finishRestore()
                     } else if (!forceStop) {
-                        RestoreInfoScreen.open(backup)
+                        RestoreInfoScreen.open(backup, path)
                     }
                 }
             }

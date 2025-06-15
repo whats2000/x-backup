@@ -52,5 +52,6 @@
   "xb.gui.restore.title": "回档完成",
   "xb.gui.restore.id": "备份 #%s",
   "xb.gui.restore.comment": "备注: %s",
-  "xb.gui.restore.close": "返回标题界面"
+  "xb.gui.restore.close": "返回标题界面",
+  "xb.gui.restore.reopen": "重新打开存档"
 }
