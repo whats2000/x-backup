@@ -21,7 +21,6 @@ public interface XBackupApi {
     static XBackupApi setInstance(XBackupApi instance) {
         if (Instance.instance != null && instance != null) {
             Instance.instance.close();
-//            throw new IllegalStateException("Instance already set");
         }
         Instance.instance = instance;
         return instance;
