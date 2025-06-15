@@ -17,7 +17,8 @@ class RestoreInfoScreen(private val backup: IBackup) : Screen(Text.translatable(
     }
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
-        renderBackground(context)
+        renderBackground(context, mouseX, mouseY, delta)
+        super.render(context, mouseX, mouseY, delta)
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 20, 0xFFFFFF)
         var y = height / 2 - 20
         val idText = Text.translatable("xb.gui.restore.id", backup.id)
@@ -27,7 +28,6 @@ class RestoreInfoScreen(private val backup: IBackup) : Screen(Text.translatable(
             val comment = Text.translatable("xb.gui.restore.comment", backup.comment)
             context.drawCenteredTextWithShadow(textRenderer, comment, width / 2, y, 0xFFFFFF)
         }
-        super.render(context, mouseX, mouseY, delta)
     }
 
     companion object {
