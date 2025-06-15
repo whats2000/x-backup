@@ -27,7 +27,11 @@ class RestoreInfoScreen(private val backup: IBackup, private val worldRoot: Path
     }
 
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
+        //? if >=1.20.4 {
         renderBackground(context, mouseX, mouseY, delta)
+        //?} else {
+        /*renderBackground(context)*/
+        *///?}
         super.render(context, mouseX, mouseY, delta)
         context.drawCenteredTextWithShadow(textRenderer, title, width / 2, 20, 0xFFFFFF)
         var y = height / 2 - 20
@@ -66,9 +70,13 @@ class RestoreInfoScreen(private val backup: IBackup, private val worldRoot: Path
         client.setScreen(null)
         runCatching {
             val loader = client.createIntegratedServerLoader()
+            //? if >=1.20.4 {
             loader.start(worldRoot.normalize().name) {
                 this.close()
             }
+            //?} else {
+            /*loader.start(this, worldRoot.normalize().name)*/
+            *///?}
         }.onFailure { XBackup.log.error("Failed to reopen world", it) }
     }
 }
