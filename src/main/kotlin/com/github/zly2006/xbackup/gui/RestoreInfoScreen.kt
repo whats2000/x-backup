@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screen.Screen
 import net.minecraft.client.gui.widget.ButtonWidget
 import net.minecraft.text.Text
 import java.nio.file.Path
+import kotlin.io.path.name
 
 class RestoreInfoScreen(private val backup: IBackup, private val worldRoot: Path) : Screen(Text.translatable("xb.gui.restore.title")) {
     private lateinit var reopenButton: ButtonWidget
@@ -65,7 +66,9 @@ class RestoreInfoScreen(private val backup: IBackup, private val worldRoot: Path
         client.setScreen(null)
         runCatching {
             val loader = client.createIntegratedServerLoader()
-            loader.start(worldRoot)
+            loader.start(worldRoot.normalize().name) {
+                this.close()
+            }
         }.onFailure { XBackup.log.error("Failed to reopen world", it) }
     }
 }

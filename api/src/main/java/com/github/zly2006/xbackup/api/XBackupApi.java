@@ -20,11 +20,14 @@ public interface XBackupApi {
 
     static XBackupApi setInstance(XBackupApi instance) {
         if (Instance.instance != null && instance != null) {
-            throw new IllegalStateException("Instance already set");
+            Instance.instance.close();
+//            throw new IllegalStateException("Instance already set");
         }
         Instance.instance = instance;
         return instance;
     }
+
+    void close();
 
     @NotNull Path getBlobFile(@NotNull String hash);
 
