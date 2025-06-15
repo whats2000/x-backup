@@ -52,5 +52,6 @@
   "xb.gui.restore.title": "Restore Completed",
   "xb.gui.restore.id": "Backup #%s",
   "xb.gui.restore.comment": "Comment: %s",
-  "xb.gui.restore.close": "Back to Title"
+  "xb.gui.restore.close": "Back to Title",
+  "xb.gui.restore.reopen": "Reopen Save"
 }
